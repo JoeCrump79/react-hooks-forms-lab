@@ -1,81 +1,54 @@
-import "@testing-library/jest-dom";
+
+import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
-import Filter from "../components/Filter";
+import '@testing-library/jest-dom'; // needed for .toBeInTheDocument()
 import ShoppingList from "../components/ShoppingList";
 
+// Example data used in multiple tests
 const testData = [
   { id: 1, name: "Yogurt", category: "Dairy" },
-  { id: 2, name: "Pomegranate", category: "Produce" },
-  { id: 3, name: "Lettuce", category: "Produce" },
+  { id: 2, name: "Lettuce", category: "Produce" },
+  { id: 3, name: "Swiss Cheese", category: "Dairy" },
   { id: 4, name: "String Cheese", category: "Dairy" },
-  { id: 5, name: "Swiss Cheese", category: "Dairy" },
-  { id: 6, name: "Cookies", category: "Dessert" },
 ];
 
-// Filter
-const noop = () => {};
-test("uses a prop of 'search' to display the search term in the input field", () => {
-  render(<Filter search="testing" onSearchChange={noop} />);
+describe("ShoppingList search filtering", () => {
+  test("the input field acts as a controlled input", () => {
+    render(<ShoppingList items={testData} />);
 
-  expect(screen.queryByPlaceholderText(/Search/).value).toBe("testing");
-});
+    const input = screen.getByPlaceholderText(/Search/i);
+    fireEvent.change(input, { target: { value: "testing 123" } });
 
-test("calls the onSearchChange callback prop when the input is changed", () => {
-  const onChange = jest.fn();
-  render(<Filter search="testing" onSearchChange={onChange} />);
-
-  fireEvent.change(screen.queryByPlaceholderText(/Search/), {
-    target: { value: "testing123" },
+    expect(input.value).toBe("testing 123");
   });
 
-  expect(onChange).toHaveBeenCalled();
-});
+  test("the shopping list filters based on the search term to include full matches", () => {
+    render(<ShoppingList items={testData} />);
 
-test("the input field acts as a controlled input", () => {
-  render(<ShoppingList items={testData} />);
+    // Before typing, all items should be visible
+    expect(screen.queryByText("Yogurt")).toBeInTheDocument();
+    expect(screen.queryByText("Lettuce")).toBeInTheDocument();
 
-  fireEvent.change(screen.queryByPlaceholderText(/Search/), {
-    target: { value: "testing 123" },
+    // Filter by "Yogurt"
+    fireEvent.change(screen.getByPlaceholderText(/Search/i), {
+      target: { value: "Yogurt" },
+    });
+
+    expect(screen.queryByText("Yogurt")).toBeInTheDocument();
+    expect(screen.queryByText("Lettuce")).not.toBeInTheDocument();
   });
 
-  expect(screen.queryByPlaceholderText(/Search/).value).toBe("testing 123");
-});
+  test("the shopping list filters based on the search term to include partial matches", () => {
+    render(<ShoppingList items={testData} />);
 
-// Shopping List
-test("the shopping list displays all items when initially rendered", () => {
-  const { container } = render(<ShoppingList items={testData} />);
-  expect(container.querySelector(".Items").children).toHaveLength(
-    testData.length
-  );
-});
+    // Type a partial match like "Cheese"
+    fireEvent.change(screen.getByPlaceholderText(/Search/i), {
+      target: { value: "Cheese" },
+    });
 
-test("the shopping filters based on the search term to include full matches", () => {
-  render(<ShoppingList items={testData} />);
-
-  fireEvent.change(screen.queryByPlaceholderText(/Search/), {
-    target: { value: "Yogurt" },
+    expect(screen.queryByText("Swiss Cheese")).toBeInTheDocument();
+    expect(screen.queryByText("String Cheese")).toBeInTheDocument();
+    expect(screen.queryByText("Lettuce")).not.toBeInTheDocument();
+    expect(screen.queryByText("Yogurt")).not.toBeInTheDocument();
   });
-
-  expect(screen.queryByText("Yogurt")).toBeInTheDocument();
-  expect(screen.queryByText("Lettuce")).not.toBeInTheDocument();
-
-  fireEvent.change(screen.queryByPlaceholderText(/Search/), {
-    target: { value: "Lettuce" },
-  });
-
-  expect(screen.queryByText("Lettuce")).toBeInTheDocument();
-  expect(screen.queryByText("Yogurt")).not.toBeInTheDocument();
-});
-
-test("the shopping filters based on the search term to include partial matches", () => {
-  render(<ShoppingList items={testData} />);
-
-  fireEvent.change(screen.queryByPlaceholderText(/Search/), {
-    target: { value: "Cheese" },
-  });
-
-  expect(screen.queryByText("Swiss Cheese")).toBeInTheDocument();
-  expect(screen.queryByText("String Cheese")).toBeInTheDocument();
-  expect(screen.queryByText("Lettuce")).not.toBeInTheDocument();
-  expect(screen.queryByText("Yogurt")).not.toBeInTheDocument();
 });

@@ -1,7 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import Item from "./Item";
 
-function ShoppingList({ items, search, onSearchChange }) {
+function ShoppingList({ items }) {
+  const [search, setSearch] = useState("");
+
   const itemsToDisplay = items.filter((item) =>
     item.name.toLowerCase().includes(search.toLowerCase())
   );
@@ -12,7 +14,7 @@ function ShoppingList({ items, search, onSearchChange }) {
         type="text"
         placeholder="Search"
         value={search}
-        onChange={(e) => onSearchChange(e.target.value)}
+        onChange={(e) => setSearch(e.target.value)}
       />
 
       <ul className="Items">
